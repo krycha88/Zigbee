@@ -95,13 +95,3 @@ void loop() {
   }
 }
 #endif
-
-#ifdef Z2S_GATEWAY
-void setup() {
-  // Inicjalizacja dla bramki
-}
-
-void loop() {
-  // Pętla dla bramki
-}
-#endif
