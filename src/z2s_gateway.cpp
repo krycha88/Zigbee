@@ -34,7 +34,6 @@
 
 #define BUTTON_PIN 9  // Boot button for C6/H2
 
-
 Supla::ESPWifi wifi;
 Supla::LittleFsConfig configSupla;
 Supla::Eeprom eeprom;
@@ -44,7 +43,7 @@ Supla::EspWebServer suplaServer;
 Supla::Html::DeviceInfo htmlDeviceInfo(&SuplaDevice);
 Supla::Html::WifiParameters htmlWifi;
 Supla::Html::ProtocolParameters htmlProto;
-Supla::Html::StatusLedParameters htmlStatusLed;
+// Supla::Html::StatusLedParameters htmlStatusLed;
 
 ZigbeeGateway zbGateway = ZigbeeGateway(GATEWAY_ENDPOINT_NUMBER);
 
@@ -55,8 +54,10 @@ uint32_t zbInit_delay = 0;
 bool zbInit = true;
 
 void setup() {
-  pinMode(BUTTON_PIN, INPUT);
+  Serial.begin(115200);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
 
+  Supla::Storage::Init();
   eeprom.setStateSavePeriod(5000);
 
   Z2S_loadDevicesTable();
@@ -91,8 +92,6 @@ void setup() {
   SuplaDevice.setSupla3rdPartyCACert(supla3rdCACert);
 
   SuplaDevice.setName("Zigbee to Supla");
-  // wifi.enableSSL(true);
-
   SuplaDevice.begin();
 
   startTime = millis();
@@ -135,6 +134,7 @@ void loop() {
       Serial.println("Rebooting...");
       ESP.restart();
     }
+    Serial.println("zbInit gotowe");
     zbInit = false;
     startTime = millis();
   }
