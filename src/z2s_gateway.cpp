@@ -29,11 +29,12 @@
 #include <supla/device/supla_ca_cert.h>
 #include <supla/events.h>
 #include <supla/storage/eeprom.h>
+#include <supla/storage/config.h>
 
 #define GATEWAY_ENDPOINT_NUMBER 1
 
-#define BUTTON_PIN 9  // Boot button for C6/H2
-#define STATUS_LED_GPIO 8
+#define BUTTON_CFG_RELAY_GPIO 9
+#define STATUS_LED_GPIO       8
 
 Supla::ESPWifi wifi;
 Supla::LittleFsConfig configSupla;
@@ -57,10 +58,12 @@ bool zbInit = true;
 
 void setup() {
   Serial.begin(115200);
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   Supla::Storage::Init();
   eeprom.setStateSavePeriod(5000);
+
+  auto buttonCfgRelay = new Supla::Control::Button(BUTTON_CFG_RELAY_GPIO, true, true);
+  buttonCfgRelay->configureAsConfigButton(&SuplaDevice);
 
   Z2S_loadDevicesTable();
 
@@ -110,6 +113,11 @@ char zbd_manuf_name[32];
 void loop() {
   SuplaDevice.iterate();
 
+ auto cfg = Supla::Storage::ConfigInstance();
+  if (cfg && cfg->getDeviceMode() == Supla::DEVICE_MODE_CONFIG) {
+    return;
+  }
+
   if (millis() - printTime > 10000) {
     if (zbGateway.getGatewayDevices().size() > 0) {
       if (esp_zb_is_started() && esp_zb_lock_acquire(portMAX_DELAY)) {
@@ -141,21 +149,21 @@ void loop() {
     startTime = millis();
   }
 
-  if (digitalRead(BUTTON_PIN) == LOW) {  // Push button pressed
-    // Key debounce handling
-    delay(100);
+  // if (digitalRead(BUTTON_PIN) == LOW) {  // Push button pressed
+  //   // Key debounce handling
+  //   delay(100);
 
-    while (digitalRead(BUTTON_PIN) == LOW) {
-      delay(50);
-      if ((millis() - startTime) > 5000) {
-        // If key pressed for more than 5 secs, factory reset Zigbee and reboot
-        Serial.printf("Resetting Zigbee to factory settings, reboot.\n");
-        Zigbee.factoryReset();
-      }
-    }
-    Zigbee.openNetwork(180);
-  }
-  delay(100);
+  //   while (digitalRead(BUTTON_PIN) == LOW) {
+  //     delay(50);
+  //     if ((millis() - startTime) > 5000) {
+  //       // If key pressed for more than 5 secs, factory reset Zigbee and reboot
+  //       Serial.printf("Resetting Zigbee to factory settings, reboot.\n");
+  //       Zigbee.factoryReset();
+  //     }
+  //   }
+  //   Zigbee.openNetwork(180);
+  // }
+  // delay(100);
 
   if (zbGateway.isNewDeviceJoined()) {
     zbGateway.clearNewDeviceJoined();

@@ -32,6 +32,7 @@ class Z2S_VirtualThermHygroMeter : public Supla::Sensor::ThermHygroMeter {
 
 
     double getTemp() override {
+      Serial.println("hhhhhhhh");
       if (esp_zb_is_started() && esp_zb_lock_acquire(portMAX_DELAY)) {
 	Device.short_addr = esp_zb_address_short_by_ieee(Device.ieee_addr);
         Gateway->sendAttributeRead(&Device, ESP_ZB_ZCL_CLUSTER_ID_TEMP_MEASUREMENT, ESP_ZB_ZCL_ATTR_TEMP_MEASUREMENT_VALUE_ID);
