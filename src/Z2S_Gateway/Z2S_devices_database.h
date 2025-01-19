@@ -124,8 +124,6 @@ static z2s_device_entity_t Z2S_DEVICES_LIST[] PROGMEM = {
   { .manufacturer_name = "_TZE200_vvmbj46n", .model_name = "TS0601", 
     .z2s_device_desc_id = Z2S_DEVICE_DESC_TEMPHUMIDITY_SENSOR, .z2s_device_endpoints_count = 1}
 };
-
-//_TZ3000_wkai4ga5
 #endif
 
 

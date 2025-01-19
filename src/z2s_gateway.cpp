@@ -33,17 +33,19 @@
 #define GATEWAY_ENDPOINT_NUMBER 1
 
 #define BUTTON_PIN 9  // Boot button for C6/H2
+#define STATUS_LED_GPIO 8
 
 Supla::ESPWifi wifi;
 Supla::LittleFsConfig configSupla;
 Supla::Eeprom eeprom;
 
+Supla::Device::StatusLed statusLed(STATUS_LED_GPIO, true);
 Supla::EspWebServer suplaServer;
 
 Supla::Html::DeviceInfo htmlDeviceInfo(&SuplaDevice);
 Supla::Html::WifiParameters htmlWifi;
 Supla::Html::ProtocolParameters htmlProto;
-// Supla::Html::StatusLedParameters htmlStatusLed;
+Supla::Html::StatusLedParameters htmlStatusLed;
 
 ZigbeeGateway zbGateway = ZigbeeGateway(GATEWAY_ENDPOINT_NUMBER);
 
