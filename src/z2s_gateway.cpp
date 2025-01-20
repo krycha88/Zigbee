@@ -9,8 +9,8 @@
 
 #include <ZigbeeGateway.h>
 
-#include "Z2S_Gateway/Z2S_Devices_Database.h"
-#include "Z2S_Gateway/Z2S_Devices_Table.h"
+#include "Z2S_Devices_Database.h"
+#include <Z2S_Devices_Table.h>
 #include "esp_coexist.h"
 
 #include <SuplaDevice.h>
@@ -113,28 +113,11 @@ char zbd_manuf_name[32];
 void loop() {
   SuplaDevice.iterate();
 
- auto cfg = Supla::Storage::ConfigInstance();
-  if (cfg && cfg->getDeviceMode() == Supla::DEVICE_MODE_CONFIG) {
+  if (SuplaDevice.getCurrentStatus() == STATUS_CONFIG_MODE) {
     return;
   }
 
-  if (millis() - printTime > 10000) {
-    if (zbGateway.getGatewayDevices().size() > 0) {
-      if (esp_zb_is_started() && esp_zb_lock_acquire(portMAX_DELAY)) {
-        zb_device_params_t *gt_device = zbGateway.getGatewayDevices().front();
-        log_i("short address before 0x%x", gt_device->short_addr);
-        gt_device->short_addr = esp_zb_address_short_by_ieee(gt_device->ieee_addr);
-        log_i("short address after 0x%x", gt_device->short_addr);
-        // zbGateway.sendAttributeWrite(gt_device, ESP_ZB_ZCL_CLUSTER_ID_IAS_ZONE, ESP_ZB_ZCL_ATTR_IAS_ZONE_IAS_CIE_ADDRESS_ID,
-        //                           ESP_ZB_ZCL_ATTR_TYPE_U64,8, gt_device->ieee_addr);
-        // zbGateway.sendIASzoneEnrollResponseCmd(gt_device, ESP_ZB_ZCL_IAS_ZONE_ENROLL_RESPONSE_CODE_SUCCESS, 120);
-        // zbGateway.sendAttributeRead(gt_device, ESP_ZB_ZCL_CLUSTER_ID_IAS_ZONE, ESP_ZB_ZCL_ATTR_IAS_ZONE_ZONESTATUS_ID);
-      }
-      esp_zb_lock_release();
-      printTime = millis();
-    }
-  }
-  if (zbInit && wifi.isReady()) {
+  if (zbInit && SuplaDevice.getCurrentStatus() == STATUS_REGISTERED_AND_READY) {
     Serial.println("zbInit");
 
     esp_coex_wifi_i154_enable();
@@ -144,26 +127,9 @@ void loop() {
       Serial.println("Rebooting...");
       ESP.restart();
     }
-    Serial.println("zbInit gotowe");
     zbInit = false;
     startTime = millis();
   }
-
-  // if (digitalRead(BUTTON_PIN) == LOW) {  // Push button pressed
-  //   // Key debounce handling
-  //   delay(100);
-
-  //   while (digitalRead(BUTTON_PIN) == LOW) {
-  //     delay(50);
-  //     if ((millis() - startTime) > 5000) {
-  //       // If key pressed for more than 5 secs, factory reset Zigbee and reboot
-  //       Serial.printf("Resetting Zigbee to factory settings, reboot.\n");
-  //       Zigbee.factoryReset();
-  //     }
-  //   }
-  //   Zigbee.openNetwork(180);
-  // }
-  // delay(100);
 
   if (zbGateway.isNewDeviceJoined()) {
     zbGateway.clearNewDeviceJoined();
@@ -205,7 +171,9 @@ void loop() {
                 esp_zb_lock_acquire(portMAX_DELAY);
                 joined_device->endpoint = endpoint_id;
                 joined_device->model_id = Z2S_DEVICES_DESC[k].z2s_device_desc_id;
-                zbGateway.setClusters2Bind(Z2S_DEVICES_LIST[i].z2s_device_endpoints_count * Z2S_DEVICES_DESC[k].z2s_device_clusters_count);
+                // zbGateway.setClusters2Bind(Z2S_DEVICES_LIST[i].z2s_device_endpoints_count * Z2S_DEVICES_DESC[k].z2s_device_clusters_count);
+                Z2S_addZ2SDevice(joined_device);
+                // zbGateway.setClusters2Bind(Z2S_DEVICES_DESC[k].z2s_device_clusters_count);
                 for (int m = 0; m < Z2S_DEVICES_DESC[k].z2s_device_clusters_count; m++)
                   zbGateway.bindDeviceCluster(joined_device, Z2S_DEVICES_DESC[k].z2s_device_clusters[m]);
                 esp_zb_lock_release();
