@@ -150,8 +150,6 @@ void loop() {
     startTime = millis();
   }
 
-  delay(100);
-
   if (zbGateway.isNewDeviceJoined()) {
     zbGateway.clearNewDeviceJoined();
     zbGateway.printJoinedDevices();
