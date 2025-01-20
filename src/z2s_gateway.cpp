@@ -9,7 +9,7 @@
 
 #include <ZigbeeGateway.h>
 
-#include "Z2S_Devices_Database.h"
+#include "Z2S_Gateway/Z2S_Devices_Database.h"
 #include <Z2S_Devices_Table.h>
 #include "esp_coexist.h"
 
@@ -56,6 +56,24 @@ uint32_t zbInit_delay = 0;
 
 bool zbInit = true;
 
+enum addedActions
+{
+  factoryReset,
+  myOFF
+};
+
+class addedActionsClass : public Supla::ActionHandler {
+ public:
+  addedActionsClass(){};
+  void handleAction(int event, int action) {
+    if (event == Supla::ON_CLICK_10 && action == factoryReset)
+      Serial.printf("Resetting Zigbee to factory settings, reboot.\n");
+    Zigbee.factoryReset();
+    Zigbee.openNetwork(180);
+  }
+};
+addedActionsClass *custAct = new addedActionsClass;
+
 void setup() {
   Serial.begin(115200);
 
@@ -63,6 +81,7 @@ void setup() {
   eeprom.setStateSavePeriod(5000);
 
   auto buttonCfgRelay = new Supla::Control::Button(BUTTON_CFG_RELAY_GPIO, true, true);
+  buttonCfgRelay->addAction(factoryReset, custAct, Supla::ON_CLICK_10);
   buttonCfgRelay->configureAsConfigButton(&SuplaDevice);
 
   Z2S_loadDevicesTable();
@@ -113,9 +132,9 @@ char zbd_manuf_name[32];
 void loop() {
   SuplaDevice.iterate();
 
-  if (SuplaDevice.getCurrentStatus() == STATUS_CONFIG_MODE) {
-    return;
-  }
+  // if (SuplaDevice.getCurrentStatus()  == Supla::DEVICE_MODE_CONFIG) {
+  //   return;
+  // }
 
   if (zbInit && SuplaDevice.getCurrentStatus() == STATUS_REGISTERED_AND_READY) {
     Serial.println("zbInit");
@@ -130,6 +149,8 @@ void loop() {
     zbInit = false;
     startTime = millis();
   }
+
+  delay(100);
 
   if (zbGateway.isNewDeviceJoined()) {
     zbGateway.clearNewDeviceJoined();
@@ -168,15 +189,13 @@ void loop() {
 
                 device_recognized = true;
 
-                esp_zb_lock_acquire(portMAX_DELAY);
                 joined_device->endpoint = endpoint_id;
                 joined_device->model_id = Z2S_DEVICES_DESC[k].z2s_device_desc_id;
-                // zbGateway.setClusters2Bind(Z2S_DEVICES_LIST[i].z2s_device_endpoints_count * Z2S_DEVICES_DESC[k].z2s_device_clusters_count);
+
                 Z2S_addZ2SDevice(joined_device);
-                // zbGateway.setClusters2Bind(Z2S_DEVICES_DESC[k].z2s_device_clusters_count);
+
                 for (int m = 0; m < Z2S_DEVICES_DESC[k].z2s_device_clusters_count; m++)
                   zbGateway.bindDeviceCluster(joined_device, Z2S_DEVICES_DESC[k].z2s_device_clusters[m]);
-                esp_zb_lock_release();
               }
               else
                 log_i("DESC checking 0x%x, %d, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, endpoint %d ", Z2S_DEVICES_DESC[k].z2s_device_desc_id,
