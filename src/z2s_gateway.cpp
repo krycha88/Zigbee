@@ -167,16 +167,22 @@ void loop() {
 
       for (int i = 0; i < devices_list_table_size; i++) {
         if ((strcmp(zbd_model_name, Z2S_DEVICES[i].model_name) == 0) && (strcmp(zbd_manuf_name, Z2S_DEVICES[i].manufacturer_name) == 0)) {
-          log_i("LIST matched %s::%s, entry # %d, endpoints # %d, endpoints %d,%d,%d,%d", Z2S_DEVICES[i].manufacturer_name,
-                Z2S_DEVICES[i].model_name, i, Z2S_DEVICES[i].z2s_device_endpoints_count, Z2S_DEVICES[i].z2s_device_endpoints[0],
-                Z2S_DEVICES[i].z2s_device_endpoints[1], Z2S_DEVICES[i].z2s_device_endpoints[2],
-                Z2S_DEVICES[i].z2s_device_endpoints[3]);
+          log_i("LIST matched %s::%s, entry # %d, endpoints # %d, endpoints 0x%x::0x%x,0x%x::0x%x,0x%x::0x%x,0x%x::0x%x",
+                Z2S_DEVICES[i].manufacturer_name, Z2S_DEVICES[i].model_name, i, Z2S_DEVICES[i].z2s_device_endpoints_count,
+                Z2S_DEVICES[i].z2s_device_endpoints[0].endpoint_id, Z2S_DEVICES[i].z2s_device_endpoints[0].z2s_device_desc_id,
+                Z2S_DEVICES[i].z2s_device_endpoints[1].endpoint_id, Z2S_DEVICES[i].z2s_device_endpoints[1].z2s_device_desc_id,
+                Z2S_DEVICES[i].z2s_device_endpoints[2].endpoint_id, Z2S_DEVICES[i].z2s_device_endpoints[2].z2s_device_desc_id,
+                Z2S_DEVICES[i].z2s_device_endpoints[3].endpoint_id, Z2S_DEVICES[i].z2s_device_endpoints[3].z2s_device_desc_id);
 
           for (int j = 0; j < Z2S_DEVICES[i].z2s_device_endpoints_count; j++) {
-            uint8_t endpoint_id = (Z2S_DEVICES[i].z2s_device_endpoints_count == 1) ? 1 : Z2S_DEVICES[i].z2s_device_endpoints[j];
+            uint8_t endpoint_id = (Z2S_DEVICES[i].z2s_device_endpoints_count == 1) ? 1 : Z2S_DEVICES[i].z2s_device_endpoints[j].endpoint_id;
+
+            uint32_t z2s_device_desc_id = (Z2S_DEVICES[i].z2s_device_endpoints_count == 1)
+                                              ? Z2S_DEVICES[i].z2s_device_desc_id
+                                              : Z2S_DEVICES[i].z2s_device_endpoints[j].z2s_device_desc_id;
 
             for (int k = 0; k < devices_desc_table_size; k++) {
-              if (Z2S_DEVICES[i].z2s_device_desc_id == Z2S_DEVICES_DESC[k].z2s_device_desc_id) {
+              if (z2s_device_desc_id == Z2S_DEVICES_DESC[k].z2s_device_desc_id) {
                 log_i("DESC matched 0x%x, %d, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, endpoint 0x%x ", Z2S_DEVICES_DESC[k].z2s_device_desc_id,
                       Z2S_DEVICES_DESC[k].z2s_device_clusters_count, Z2S_DEVICES_DESC[k].z2s_device_clusters[0],
                       Z2S_DEVICES_DESC[k].z2s_device_clusters[1], Z2S_DEVICES_DESC[k].z2s_device_clusters[2],
