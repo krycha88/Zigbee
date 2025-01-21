@@ -9,8 +9,9 @@
 
 #include <ZigbeeGateway.h>
 
-#include "Z2S_Gateway/Z2S_Devices_Database.h"
+#include "Z2S_Gateway/Z2S_database.h"
 #include <Z2S_Devices_Table.h>
+#include <Z2S_devices_database.h>
 #include "esp_coexist.h"
 
 #include <SuplaDevice.h>
@@ -51,28 +52,27 @@ Supla::Html::StatusLedParameters htmlStatusLed;
 ZigbeeGateway zbGateway = ZigbeeGateway(GATEWAY_ENDPOINT_NUMBER);
 
 uint32_t startTime = 0;
-uint32_t printTime = 0;
 uint32_t zbInit_delay = 0;
-
 bool zbInit = true;
 
 enum addedActions
 {
   factoryReset,
-  myOFF
 };
 
-class addedActionsClass : public Supla::ActionHandler {
+class CustomActionHandler : public Supla::ActionHandler {
  public:
-  addedActionsClass(){};
+  CustomActionHandler() {};
   void handleAction(int event, int action) {
-    if (event == Supla::ON_CLICK_10 && action == factoryReset)
+    if (event == Supla::ON_CLICK_10 && action == factoryReset) {
       Serial.printf("Resetting Zigbee to factory settings, reboot.\n");
-    Zigbee.factoryReset();
-    Zigbee.openNetwork(180);
+      Zigbee.factoryReset();
+      Zigbee.openNetwork(180);
+    }
   }
 };
-addedActionsClass *custAct = new addedActionsClass;
+
+CustomActionHandler *customActionHandler = new CustomActionHandler;
 
 void setup() {
   Serial.begin(115200);
@@ -81,7 +81,7 @@ void setup() {
   eeprom.setStateSavePeriod(5000);
 
   auto buttonCfgRelay = new Supla::Control::Button(BUTTON_CFG_RELAY_GPIO, true, true);
-  buttonCfgRelay->addAction(factoryReset, custAct, Supla::ON_CLICK_10);
+  buttonCfgRelay->addAction(factoryReset, customActionHandler, Supla::ON_CLICK_10);
   buttonCfgRelay->configureAsConfigButton(&SuplaDevice);
 
   Z2S_loadDevicesTable();
@@ -119,7 +119,6 @@ void setup() {
   SuplaDevice.begin();
 
   startTime = millis();
-  printTime = millis();
   zbInit_delay = millis();
 }
 
@@ -162,22 +161,22 @@ void loop() {
       strcpy(zbd_model_name, zbGateway.readModel(joined_device->endpoint, joined_device->short_addr, joined_device->ieee_addr));
       log_i("model %s ", zbd_model_name);
 
-      uint16_t devices_list_table_size = sizeof(Z2S_DEVICES_LIST) / sizeof(Z2S_DEVICES_LIST[0]);
+      uint16_t devices_list_table_size = sizeof(Z2S_DEVICES) / sizeof(Z2S_DEVICES[0]);
       uint16_t devices_desc_table_size = sizeof(Z2S_DEVICES_DESC) / sizeof(Z2S_DEVICES_DESC[0]);
       bool device_recognized = false;
 
       for (int i = 0; i < devices_list_table_size; i++) {
-        if ((strcmp(zbd_model_name, Z2S_DEVICES_LIST[i].model_name) == 0) && (strcmp(zbd_manuf_name, Z2S_DEVICES_LIST[i].manufacturer_name) == 0)) {
-          log_i("LIST matched %s::%s, entry # %d, endpoints # %d, endpoints %d,%d,%d,%d", Z2S_DEVICES_LIST[i].manufacturer_name,
-                Z2S_DEVICES_LIST[i].model_name, i, Z2S_DEVICES_LIST[i].z2s_device_endpoints_count, Z2S_DEVICES_LIST[i].z2s_device_endpoints[0],
-                Z2S_DEVICES_LIST[i].z2s_device_endpoints[1], Z2S_DEVICES_LIST[i].z2s_device_endpoints[2],
-                Z2S_DEVICES_LIST[i].z2s_device_endpoints[3]);
+        if ((strcmp(zbd_model_name, Z2S_DEVICES[i].model_name) == 0) && (strcmp(zbd_manuf_name, Z2S_DEVICES[i].manufacturer_name) == 0)) {
+          log_i("LIST matched %s::%s, entry # %d, endpoints # %d, endpoints %d,%d,%d,%d", Z2S_DEVICES[i].manufacturer_name,
+                Z2S_DEVICES[i].model_name, i, Z2S_DEVICES[i].z2s_device_endpoints_count, Z2S_DEVICES[i].z2s_device_endpoints[0],
+                Z2S_DEVICES[i].z2s_device_endpoints[1], Z2S_DEVICES[i].z2s_device_endpoints[2],
+                Z2S_DEVICES[i].z2s_device_endpoints[3]);
 
-          for (int j = 0; j < Z2S_DEVICES_LIST[i].z2s_device_endpoints_count; j++) {
-            uint8_t endpoint_id = (Z2S_DEVICES_LIST[i].z2s_device_endpoints_count == 1) ? 1 : Z2S_DEVICES_LIST[i].z2s_device_endpoints[j];
+          for (int j = 0; j < Z2S_DEVICES[i].z2s_device_endpoints_count; j++) {
+            uint8_t endpoint_id = (Z2S_DEVICES[i].z2s_device_endpoints_count == 1) ? 1 : Z2S_DEVICES[i].z2s_device_endpoints[j];
 
             for (int k = 0; k < devices_desc_table_size; k++) {
-              if (Z2S_DEVICES_LIST[i].z2s_device_desc_id == Z2S_DEVICES_DESC[k].z2s_device_desc_id) {
+              if (Z2S_DEVICES[i].z2s_device_desc_id == Z2S_DEVICES_DESC[k].z2s_device_desc_id) {
                 log_i("DESC matched 0x%x, %d, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, endpoint 0x%x ", Z2S_DEVICES_DESC[k].z2s_device_desc_id,
                       Z2S_DEVICES_DESC[k].z2s_device_clusters_count, Z2S_DEVICES_DESC[k].z2s_device_clusters[0],
                       Z2S_DEVICES_DESC[k].z2s_device_clusters[1], Z2S_DEVICES_DESC[k].z2s_device_clusters[2],
@@ -206,7 +205,7 @@ void loop() {
           }
         }
         else
-          log_i("LIST checking %s::%s, entry # %d", Z2S_DEVICES_LIST[i].manufacturer_name, Z2S_DEVICES_LIST[i].model_name, i);
+          log_i("LIST checking %s::%s, entry # %d", Z2S_DEVICES[i].manufacturer_name, Z2S_DEVICES[i].model_name, i);
       }
       if (!device_recognized)
         log_d("Unknown model %s::%s, no binding is possible", zbd_manuf_name, zbd_model_name);
