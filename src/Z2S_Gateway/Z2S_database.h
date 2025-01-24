@@ -3,6 +3,42 @@
 #include <Arduino.h>
 #include <Z2S_devices_database.h>
 
+const char* jsonDevices = R"({"devices": [
+    {
+      "manufacturer_name": "_TZ3000_akqdg6g7",
+      "model_name": "TS0201",
+      "z2s_device_desc_id": "TEMPHUMIDITY_SENSOR",
+      "z2s_device_endpoints_count": 1
+    },
+    {
+      "manufacturer_name": "Xiaomi",
+      "model_name": "LYWSD03MMC-z",
+      "z2s_device_desc_id": "TEMPHUMIDITY_SENSOR_1",
+      "z2s_device_endpoints_count": 1
+    },
+    {
+      "manufacturer_name": "_TZ3000_0hkmcrza",
+      "model_name": "TS0203",
+      "z2s_device_desc_id": "IAS_ZONE_SENSOR",
+      "z2s_device_endpoints_count": 1
+    },
+    {
+      "manufacturer_name": "_TZ3000_cehuw1lw",
+      "model_name": "TS011F",
+      "z2s_device_desc_id": "RELAY_ELECTRICITY_METER",
+      "z2s_device_endpoints_count": 1
+    },
+    {
+      "manufacturer_name": "_TZ3000_wkai4ga5",
+      "model_name": "TS0044",
+      "z2s_device_desc_id": "ON_OFF",
+      "z2s_device_endpoints_count": 4,
+      "endpoints": [1, 2, 3, 4]
+    }
+  ]
+}
+})";
+
 static const z2s_device_entity_t Z2S_DEVICES[] PROGMEM = {
     // Temperatury i wilgotności
     {"_TZ3000_akqdg6g7", "TS0201", Z2S_DEVICE_DESC_TEMPHUMIDITY_SENSOR, 1},
