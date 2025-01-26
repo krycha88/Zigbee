@@ -29,11 +29,15 @@ class SuplaZigbeeGateway : public Supla::Element, public Supla::ActionHandler {
   int factoryResetButtonPin;
 
   uint32_t startTime;
+  uint32_t printTime;
   uint32_t zbInitDelay;
   bool zbInit;
 
   zb_device_params_t* gatewayDevice;
   zb_device_params_t* joinedDevice;
+
+  uint8_t counter = 0;
+  uint8_t tuya_dp_data[10];
 
   char zbdModelName[32];
   char zbdManufName[32];
